@@ -19,12 +19,13 @@ require_relative 'helpers/request_helpers'
 require_relative 'routes/api'
 require_relative 'routes/icons'
 require_relative 'routes/identity'
+require_relative 'routes/attachments'
 
 module BitwardenRuby
   class App < Sinatra::Base
     register Sinatra::Namespace
 
-    set :root, File.dirname(__FILE__)
+    set :root, File.expand_path("..", File.dirname(__FILE__))
     configure do
       enable :logging
     end
@@ -52,5 +53,6 @@ module BitwardenRuby
     register BitwardenRuby::Routing::Api
     register BitwardenRuby::Routing::Icons
     register BitwardenRuby::Routing::Identity
+    register BitwardenRuby::Routing::Attachments
   end
 end
