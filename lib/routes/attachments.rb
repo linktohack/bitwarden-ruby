@@ -15,46 +15,93 @@
 #
 
 # TODO
-## implement attachment_url helper
-## implement retrieve_cipher helper
-## figure out id generation
-## implement cipher.add_attachment
-## implement cipher.remove_attachment
+## implement human_file_size
+## delete attachments on deletion of cipher
+#
+# uses helpers/attachment_helpers
 module BitwardenRuby
   module Routing
     module Attachments
       def self.registered(app)
-        attachments_path = File.expand_path("data/attachments", app.root)
         app.namespace BASE_URL do
           post "/ciphers/:uuid/attachment" do
-            cipher = retrieve_cipher uuid: params[:uuid], token: ...
-            filename = params[:data][:filename]
+            cipher = retrieve_cipher uuid: params[:uuid]
+
+            need_params(:data) do |p|
+              return validation_error("#{p} cannot be blank")
+            end
+
+            # we have to extract filename from data -> head, since data -> filename is truncated
+            filename = nil
+            if md = params[:data][:head].match(/filename=\"(\S+)\"\r\nContent-Type/)
+              filename = md[1]
+            else
+              return validation_error("filename cannot be blank")
+            end
+            puts filename
+
             file = params[:data][:tempfile]
-            id = "XXX-to-figure-out-XXX"
-            target = File.expand_path(id, attachments_path)
-            return validation_error("invalid data") if File.dirname(target) != attachments_path
-            File.open target, 'wb' do |f|
+            # https://github.com/bitwarden/core/blob/master/src/Core/Services/Implementations/CipherService.cs#L148
+            #   var attachmentId = Utilities.CoreHelpers.SecureRandomString(32, upper: false, special: false);
+            # use hex string, to make validation simpler for get case
+            id = SecureRandom.hex(32)[0,32]
+
+            File.open attachment_path(id: id, uuid: params[:uuid], app: app), 'wb' do |f|
               f.write(file.read)
             end
+
             cipher.add_attachment attachment: {
               Id: id,
-              filename: filename,
-              Url: attachment_url(uuid: uuid, id: id),
+              Url: attachment_url(uuid: params[:uuid], id: id),
+              FileName: filename,
               Size: file.size,
-              SieName: human_file_size(file.size)
+              SizeName: human_file_size(byte_size: file.size),
+              Object: "attachment"
             }
 
-            cipher.to_hash.to_json
+            Cipher.transaction do
+              if !cipher.save
+                return validation_error("error saving")
+              end
+
+              cipher.to_hash.to_json
+            end
           end
 
           delete "/ciphers/:uuid/attachment/:attachment_id" do
-            cipher = retrieve_cipher uuid: params[:uuid], token: ...
+            cipher = retrieve_cipher uuid: params[:uuid]
+            unless params[:attachment_id] =~ /\A[0-9a-f]{32}\z/
+              return validation_error("invalid attachment id")
+            end
             cipher.remove_attachment attachment_id: params[:attachment_id]
+            path = attachment_path(id: params[:attachment_id], uuid: params[:uuid], app: app)
+            File.delete path if File.exists? path
+            Cipher.transaction do
+              if !cipher.save
+                return validation_error("error saving")
+              end
 
-            ""
+              ""
+            end
+          end
+        end # BASE_URL
+
+        app.get "/attachments/:uuid/:attachment_id" do
+          unless params[:uuid] =~ /\A[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\z/
+            return validation_error("invalid uuid")
+          end
+          unless params[:attachment_id] =~ /\A[0-9a-f]{32}\z/
+            return validation_error("invalid attachment id")
+          end
+          path = attachment_path(id: params[:attachment_id], uuid: params[:uuid], app: app)
+
+          if File.exists? path
+            send_file path
+          else
+            halt 404
           end
         end
-      end
+      end # registered app
     end
   end
 end

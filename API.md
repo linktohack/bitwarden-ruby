@@ -221,14 +221,14 @@ CipherString.
 
 ### URLs
 
-By default, BitWarden uses three different subdomains of `bitwarden.com`, one
+By default, BitWarden uses four different subdomains of `bitwarden.com`, one
 as the `$baseURL` which does most API operations, one as the `$identityURL`
 which handles logins (but not signups for some reason) and issues OAuth tokens,
 and an `$iconURL` which just fetches, caches, and serves requests for site
-icons.
+icons. It also uses `$cdnURL`, where the attachments are downloaded from.
 
 When configuring a self-hosted environment in the device apps before logging
-in, all three of these are assumed to be the same URL.
+in, all four of these are assumed to be the same URL.
 
 ### Signup
 
@@ -599,6 +599,16 @@ Send an empty `DELETE` request to `$baseURL/ciphers/(cipher UUID)/attachment/(at
 	Authorization: Bearer (access_token)
 
 A successful but zero-length response will be returned.
+
+### Downloading an attachment
+
+$cdn_url using the official server is https://cdn.bitwarden.com.
+
+Send an unauthenticated `GET` request to `$cdn_url/attachments/(cipher UUID)/(attachment id)`:
+
+	GET $cdn_url/attachments/(cipher UUID)/(attachment id)
+
+The file will be sent as a response.
 
 ### Folders
 
