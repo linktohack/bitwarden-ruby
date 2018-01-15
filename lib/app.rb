@@ -24,7 +24,6 @@ require_relative 'routes/account'
 module BitwardenRuby
   class App < Sinatra::Base
     register Sinatra::Namespace
-    register Sinatra::Reloader
 
     set :root, File.expand_path("..", File.dirname(__FILE__))
     set :public_folder, Proc.new { File.join(root, "public") }
