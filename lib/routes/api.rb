@@ -360,7 +360,6 @@ module BitwardenRuby
           end
 
           get "/collections" do
-            response['access-control-allow-origin'] = '*'
             {"Data" => [],"Object" => "list"}.to_json
           end
         end # namespace
