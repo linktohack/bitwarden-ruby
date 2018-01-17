@@ -186,6 +186,41 @@ module BitwardenRuby
             ""
           end
 
+          # import ciphers using web-vault
+          post "/ciphers/import" do
+            d = device_from_bearer
+            if !d
+              return validation_error("invalid bearer")
+            end
+
+            #First we create all the folders
+            params[:folders].each do |p|
+              f = Folder.new
+              f.user_uuid = d.user_uuid
+              f.update_from_params(p)
+              Folder.transaction do
+                if !f.save
+                  return validation_error("error saving")
+                end
+              end
+            end
+
+            # We create each CipherString
+            params[:ciphers].each_with_index do |p,i|
+              c = Cipher.new
+              c.user_uuid = d.user_uuid
+              c.update_from_params(p)
+              c.folder_uuid = Folder.find_by_user_uuid_and_name(d.user_uuid, params[:folders][params[:folderrelationships][i]["value"].to_i]["name"]).uuid
+              Cipher.transaction do
+                if !c.save
+                  return validation_error("error saving")
+                end
+              end
+            end
+            ""
+          end
+
+
           #
           # folders
           #
