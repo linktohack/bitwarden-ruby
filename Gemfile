@@ -20,3 +20,5 @@ gem "rqrcode"
 gem "rake"
 gem "minitest"
 gem "rack-test"
+# for development
+gem "pry"

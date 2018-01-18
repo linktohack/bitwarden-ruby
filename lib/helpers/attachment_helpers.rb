@@ -14,7 +14,34 @@
 # OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 #
 
-require File.dirname(__FILE__) + "/lib/bitwarden_ruby.rb"
-require "#{APP_ROOT}/lib/app.rb"
+module BitwardenRuby
+  module AttachmentHelpers
+    def attachment_url(uuid:, id:)
+      url("/attachments/#{uuid}/#{id}")
+    end
 
-run BitwardenRuby::App
+    def attachment_path(id:, uuid:, app:)
+      base = File.expand_path("data/attachments/#{uuid}/", app.root)
+      FileUtils.mkpath(base)
+      File.expand_path(id, base)
+    end
+
+    def retrieve_cipher(uuid: )
+      d = device_from_bearer
+      if !d
+        halt validation_error("invalid bearer")
+      end
+
+      c = nil
+      if params[:uuid].blank? ||
+      !(c = Cipher.find_by_user_uuid_and_uuid(d.user_uuid, params[:uuid]))
+        halt validation_error("invalid cipher")
+      end
+      return c
+    end
+
+    def human_file_size(byte_size:)
+      "#{byte_size} Bytes"
+    end
+  end
+end

@@ -45,7 +45,7 @@ class Cipher < DBModel
       "FolderId" => self.folder_uuid,
       "Favorite" => self.favorite,
       "OrganizationId" => nil,
-      "Attachments" => self.attachments,
+      "Attachments" => self.attachments.to_s.blank? ? [] : JSON.parse(self.attachments.to_s),
       "OrganizationUseTotp" => false,
       "Data" => JSON.parse(self.data.to_s),
       "Object" => "cipher",
@@ -89,6 +89,18 @@ class Cipher < DBModel
     end
 
     self.data = cdata.to_json
+  end
+
+  def add_attachment attachment:
+    target = self.attachments.to_s.blank? ? [] : JSON.parse(self.attachments.to_s)
+    target << attachment
+    self.attachments = target.to_json
+  end
+
+  def remove_attachment attachment_id:
+    target = self.attachments.to_s.blank? ? [] : JSON.parse(self.attachments.to_s)
+    removed = target.reject {|attachment| attachment["Id"] == attachment_id }
+    self.attachments = removed.to_json
   end
 
   def user
