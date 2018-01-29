@@ -202,6 +202,19 @@ module BitwardenRuby
             end
             ""
           end
+
+          post "/ciphers/delete" do
+            need_params(:ids) do |p|
+              return validation_error("#{p} cannot be blank")
+            end
+
+            params[:ids].each do |id|
+              delete_cipher app: app, uuid: id
+            end
+
+            ""
+          end
+
           # update a cipher
           put "/ciphers/:uuid" do
             update_cipher
@@ -214,11 +227,11 @@ module BitwardenRuby
 
           # delete a cipher
           delete "/ciphers/:uuid" do
-            delete_cipher app: app
+            delete_cipher app: app, uuid: params[:uuid]
           end
 
           post "/ciphers/:uuid/delete" do
-            delete_cipher app: app
+            delete_cipher app: app, uuid: params[:uuid]
           end
 
           #
