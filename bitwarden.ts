@@ -1,8 +1,26 @@
 import { createCipheriv, createDecipheriv, createHmac, Decipher, pbkdf2, randomBytes } from 'crypto';
 import * as promisify from 'util.promisify';
+import ReadWriteStream = NodeJS.ReadWriteStream;
 
 const pbkdf2Async = promisify(pbkdf2);
 const randomBytesAsync = promisify(randomBytes);
+
+async function fromStream(stream: ReadWriteStream, data: Buffer | string): Promise<Buffer> {
+    return new Promise<Buffer>((resolve, reject) => {
+        let encrypted: Buffer[] = [];
+        stream.on('readable', () => {
+            const data = stream.read();
+            if (data) {
+                encrypted.push(data instanceof Buffer ? data : Buffer.from(data));
+            }
+        });
+        stream.on('end', () => {
+            resolve(Buffer.concat(encrypted));
+        });
+        stream.write(data);
+        stream.end();
+    });
+}
 
 export class Bitwarden {
     static async makeKey(password: string, salt: string): Promise<Buffer> {
@@ -14,8 +32,7 @@ export class Bitwarden {
         const iv = await randomBytesAsync(16);
 
         const cipher = createCipheriv('aes-256-cbc', key, iv);
-        let ct = cipher.update(pt);
-        ct = Buffer.concat([ct, cipher.final()]);
+        const ct = await fromStream(cipher, pt);
         return new Bitwarden.CipherString(Bitwarden.CipherString.TYPE_AESCBC256_B64,
                                           iv.toString('base64'),
                                           ct.toString('base64')).toString();
@@ -30,18 +47,17 @@ export class Bitwarden {
         const iv = await randomBytesAsync(16);
 
         const cipher = createCipheriv('aes-256-cbc', key, iv);
-        let ct = cipher.update(pt instanceof Buffer ? pt : Buffer.from(pt));
-        ct = Buffer.concat([ct, cipher.final()]);
+        const ct = await fromStream(cipher, pt);
 
-        const mac = createHmac('sha256', macKey);
-        mac.update(Buffer.concat([iv, ct]));
+        const mac = await fromStream(createHmac('sha256', macKey), Buffer.concat([iv, ct]));
+
         return new Bitwarden.CipherString(Bitwarden.CipherString.TYPE_AESCBC256_HMACSHA256_B64,
                                           iv.toString('base64'),
                                           ct.toString('base64'),
-                                          mac.digest('base64')).toString();
+                                          mac.toString('base64')).toString();
     }
 
-    static macsEqual(macKey: string, mac1: Buffer | string | undefined, mac2: Buffer | string | undefined): boolean {
+    static async macsEqual(macKey: string, mac1: Buffer | string | undefined, mac2: Buffer | string | undefined): Promise<boolean> {
         if (mac1 === undefined) {
             return mac2 === undefined;
         } else {
@@ -50,15 +66,13 @@ export class Bitwarden {
             }
         }
 
-        const hmac1 = createHmac('sha256', macKey);
-        hmac1.update(mac1);
-        const hmac2 = createHmac('sha256', macKey);
-        hmac2.update(mac2);
+        const hmac1 = await fromStream(createHmac('sha256', macKey), mac1);
+        const hmac2 = await fromStream(createHmac('sha256', macKey), mac2);
 
-        return hmac1.digest().equals(hmac2.digest());
+        return hmac1.equals(hmac2);
     }
 
-    static decrypt(str: string, key: Buffer | string, macKey: string): Buffer {
+    static async decrypt(str: string, key: Buffer | string, macKey: string): Promise<Buffer> {
         const c = Bitwarden.CipherString.parse(str);
         const iv = Buffer.from(c.iv, 'base64');
         const ct = Buffer.from(c.ct, 'base64');
@@ -70,18 +84,17 @@ export class Bitwarden {
         switch (c.type) {
             case Bitwarden.CipherString.TYPE_AESCBC256_B64:
                 decipher = createDecipheriv('aes-256-cbc', key, iv);
-                pt = decipher.update(ct);
-                return Buffer.concat([pt, decipher.final()]);
+                pt = await fromStream(decipher, ct);
+                return pt;
 
             case Bitwarden.CipherString.TYPE_AESCBC256_HMACSHA256_B64:
-                const cmac = createHmac('sha256', macKey);
-                cmac.update(Buffer.concat([iv, ct]));
-                if (!this.macsEqual(macKey, mac, cmac.digest())) {
+                const cmac = await fromStream(createHmac('sha256', macKey), Buffer.concat([iv, ct]));
+                if (!this.macsEqual(macKey, mac, cmac)) {
                     throw new Error('invalid mac');
                 }
                 decipher = createDecipheriv('aes-256-cbc', key, iv);
-                pt = decipher.update(ct);
-                return Buffer.concat([pt, decipher.final()]);
+                pt = await fromStream(decipher, ct);
+                return pt;
         }
         throw new Error(`TODO implement ${c.type}`);
     }

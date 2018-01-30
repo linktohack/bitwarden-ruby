@@ -51,10 +51,10 @@ describe('bitwarden encryption stuff', () => {
         const cs = Bitwarden.CipherString.parse(j);
 
         ik = await Bitwarden.makeKey('password', 'user@example.com');
-        expect(Bitwarden.decrypt(cs.toString(), k.slice(0, 32), k.slice(32, 32)).toString()).to.eql('hi there');
+        expect((await Bitwarden.decrypt(cs.toString(), k.slice(0, 32), k.slice(32, 32))).toString()).to.eql('hi there');
     });
 
     it('should test mac equality', async () => {
-        expect(Bitwarden.macsEqual('asdfasdfasdf', 'hi', 'hi')).to.be.true;
+        expect(await Bitwarden.macsEqual('asdfasdfasdf', 'hi', 'hi')).to.be.true;
     });
 });
