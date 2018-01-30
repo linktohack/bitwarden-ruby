@@ -2,3 +2,7 @@
 db/*.sqlite3
 db/jwt-rsa.key
 vendor/
+.idea
+node_modules/
+*.js
+*.js.map

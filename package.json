@@ -1,0 +1,35 @@
+{
+  "name": "bitwarden-ruby",
+  "version": "1.0.0",
+  "description": "*(Note: This is still a work in progress. This project is not associated with the [Bitwarden](https://bitwarden.com/) project nor 8bit Solutions LLC.)*",
+  "main": "index.js",
+  "directories": {
+    "lib": "lib"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jcs/bitwarden-ruby.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/jcs/bitwarden-ruby/issues"
+  },
+  "homepage": "https://github.com/jcs/bitwarden-ruby#readme",
+  "dependencies": {
+    "@types/node": "^9.4.0",
+    "@types/util.promisify": "^1.0.0",
+    "util.promisify": "^1.0.0"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.2",
+    "@types/mocha": "^2.2.47",
+    "chai": "^4.1.2",
+    "mocha": "^5.0.0",
+    "ts-node": "^4.1.0"
+  }
+}
