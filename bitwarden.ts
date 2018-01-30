@@ -1,5 +1,5 @@
 import { createCipheriv, createDecipheriv, createHmac, Decipher, pbkdf2, randomBytes } from 'crypto';
-import * as promisify from 'util.promisify';
+import promisify = require('util.promisify');
 import ReadWriteStream = NodeJS.ReadWriteStream;
 
 const pbkdf2Async = promisify(pbkdf2);
