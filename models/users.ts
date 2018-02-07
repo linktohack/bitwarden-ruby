@@ -7,9 +7,18 @@ import {usersInstance, usersAttribute} from './db';
 module.exports = function(sequelize: sequelize.Sequelize, DataTypes: DataTypes) {
 	return sequelize.define<usersInstance, usersAttribute>('users', {
 		uuid: {
-			type: DataTypes.STRING,
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
 			allowNull: true,
 			primaryKey: true
+		},
+		created_at: {
+			type: DataTypes.DATE,
+			allowNull: true
+		},
+		updated_at: {
+			type: DataTypes.DATE,
+			allowNull: true
 		},
 		email: {
 			type: DataTypes.TEXT,
@@ -61,7 +70,6 @@ module.exports = function(sequelize: sequelize.Sequelize, DataTypes: DataTypes) 
 		}
 	}, {
 		tableName: 'users',
-		timestamps: true,
 		createdAt: 'created_at',
 		updatedAt: 'updated_at'
 	});

@@ -1,11 +1,19 @@
 import { createCipheriv, createDecipheriv, createHmac, Decipher, pbkdf2, randomBytes } from 'crypto';
+import * as path from 'path';
+import * as fs from 'fs';
+import * as forge from 'node-forge';
+import * as jwt from 'jsonwebtoken';
 import promisify = require('util.promisify');
 import ReadWriteStream = NodeJS.ReadWriteStream;
 
 const pbkdf2Async = promisify(pbkdf2);
 const randomBytesAsync = promisify(randomBytes);
+const existsAsync = promisify(fs.exists);
+const readFileAsync = promisify(fs.readFile);
+const writeFileAsync = promisify(fs.writeFile);
+const generateKeyPairAsync = promisify(forge.pki.rsa.generateKeyPair);
 
-async function fromStream(stream: ReadWriteStream, data: Buffer | string): Promise<Buffer> {
+async function fromStream(stream: ReadWriteStream, data: Buffer | string | undefined): Promise<Buffer> {
     return new Promise<Buffer>((resolve, reject) => {
         let encrypted: Buffer[] = [];
         stream.on('readable', () => {
@@ -17,7 +25,7 @@ async function fromStream(stream: ReadWriteStream, data: Buffer | string): Promi
         stream.on('end', () => {
             resolve(Buffer.concat(encrypted));
         });
-        stream.write(data);
+        data && stream.write(data);
         stream.end();
     });
 }
@@ -34,8 +42,8 @@ export class Bitwarden {
         const cipher = createCipheriv('aes-256-cbc', key, iv);
         const ct = await fromStream(cipher, pt);
         return new Bitwarden.CipherString(Bitwarden.CipherString.TYPE_AESCBC256_B64,
-                                          iv.toString('base64'),
-                                          ct.toString('base64')).toString();
+            iv.toString('base64'),
+            ct.toString('base64')).toString();
     }
 
     static async hashPassword(password: string, salt: string): Promise<string> {
@@ -52,9 +60,9 @@ export class Bitwarden {
         const mac = await fromStream(createHmac('sha256', macKey), Buffer.concat([iv, ct]));
 
         return new Bitwarden.CipherString(Bitwarden.CipherString.TYPE_AESCBC256_HMACSHA256_B64,
-                                          iv.toString('base64'),
-                                          ct.toString('base64'),
-                                          mac.toString('base64')).toString();
+            iv.toString('base64'),
+            ct.toString('base64'),
+            mac.toString('base64')).toString();
     }
 
     static async macsEqual(macKey: string, mac1: Buffer | string | undefined, mac2: Buffer | string | undefined): Promise<boolean> {
@@ -101,6 +109,7 @@ export class Bitwarden {
 }
 
 export module Bitwarden {
+
     export class CipherString {
         static readonly TYPE_AESCBC256_B64 = 0;
         static readonly TYPE_AESCBC128_HMACSHA256_B64 = 1;
@@ -136,6 +145,26 @@ export module Bitwarden {
     }
 
     export class InvalidCipherString extends Error {
+    }
+
+    export class Token {
+        static readonly KEY = path.join(__dirname, 'db/jwt-rsa.key');
+
+        static rsa: string;
+
+        static async load_keys() {
+            if (await existsAsync(this.KEY)) {
+                this.rsa = await readFileAsync(this.KEY);
+            } else {
+                const pair: forge.pki.KeyPair = await generateKeyPairAsync({ bits: 2048 });
+                this.rsa = forge.pki.privateKeyToPem(pair.privateKey);
+                await writeFileAsync(this.KEY, this.rsa);
+            }
+        }
+
+        static sign(payload: Buffer | string | object): string {
+            return jwt.sign(payload, this.rsa, { algorithm: 'RS256' });
+        }
     }
 }
 

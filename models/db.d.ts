@@ -5,6 +5,8 @@ import * as Sequelize from 'sequelize';
 // table: users
 export interface usersAttribute {
 	uuid?:string;
+	created_at?:Date;
+	updated_at?:Date;
 	email?:string;
 	email_verified?:boolean;
 	premium?:boolean;
@@ -24,6 +26,8 @@ export interface usersModel extends Sequelize.Model<usersInstance, usersAttribut
 // table: devices
 export interface devicesAttribute {
 	uuid?:string;
+	created_at?:Date;
+	updated_at?:Date;
 	user_uuid?:string;
 	name?:string;
 	type?:number;
@@ -38,6 +42,8 @@ export interface devicesModel extends Sequelize.Model<devicesInstance, devicesAt
 // table: ciphers
 export interface ciphersAttribute {
 	uuid?:string;
+	created_at?:Date;
+	updated_at?:Date;
 	user_uuid?:string;
 	folder_uuid?:string;
 	organization_uuid?:string;
@@ -52,6 +58,8 @@ export interface ciphersModel extends Sequelize.Model<ciphersInstance, ciphersAt
 // table: folders
 export interface foldersAttribute {
 	uuid?:string;
+	created_at?:Date;
+	updated_at?:Date;
 	user_uuid?:string;
 	name?:any;
 }

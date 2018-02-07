@@ -12,7 +12,6 @@ module.exports = function(sequelize: sequelize.Sequelize, DataTypes: DataTypes) 
 		}
 	}, {
 		tableName: 'schema_version',
-		timestamps: true,
 		createdAt: 'created_at',
 		updatedAt: 'updated_at'
 	});

@@ -7,9 +7,18 @@ import {foldersInstance, foldersAttribute} from './db';
 module.exports = function(sequelize: sequelize.Sequelize, DataTypes: DataTypes) {
 	return sequelize.define<foldersInstance, foldersAttribute>('folders', {
 		uuid: {
-			type: DataTypes.STRING,
+            type: DataTypes.UUID,
+            defaultValue: DataTypes.UUIDV4,
 			allowNull: true,
 			primaryKey: true
+		},
+		created_at: {
+			type: DataTypes.DATE,
+			allowNull: true
+		},
+		updated_at: {
+			type: DataTypes.DATE,
+			allowNull: true
 		},
 		user_uuid: {
 			type: DataTypes.STRING,
@@ -21,7 +30,6 @@ module.exports = function(sequelize: sequelize.Sequelize, DataTypes: DataTypes) 
 		}
 	}, {
 		tableName: 'folders',
-		timestamps: true,
 		createdAt: 'created_at',
 		updatedAt: 'updated_at'
 	});

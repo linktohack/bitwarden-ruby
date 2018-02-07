@@ -5,7 +5,7 @@ const auto = new SequelizeAuto('', '', '', {
     directory: 'models',
     typescript: true,
     additional: {
-        timestamps: true,
+        // timestamps: true,
         createdAt: 'created_at',
         updatedAt: 'updated_at'
     }

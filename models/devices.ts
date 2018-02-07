@@ -7,9 +7,18 @@ import {devicesInstance, devicesAttribute} from './db';
 module.exports = function(sequelize: sequelize.Sequelize, DataTypes: DataTypes) {
 	return sequelize.define<devicesInstance, devicesAttribute>('devices', {
 		uuid: {
-			type: DataTypes.STRING,
+			type: DataTypes.UUID,
+			defaultValue: DataTypes.UUIDV4,
 			allowNull: true,
 			primaryKey: true
+		},
+		created_at: {
+			type: DataTypes.DATE,
+			allowNull: true
+		},
+		updated_at: {
+			type: DataTypes.DATE,
+			allowNull: true
 		},
 		user_uuid: {
 			type: DataTypes.STRING,
@@ -41,7 +50,6 @@ module.exports = function(sequelize: sequelize.Sequelize, DataTypes: DataTypes) 
 		}
 	}, {
 		tableName: 'devices',
-		timestamps: true,
 		createdAt: 'created_at',
 		updatedAt: 'updated_at'
 	});
